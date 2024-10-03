@@ -1,137 +1,107 @@
+import time
 from Bio.Seq import Seq
-from Bio.Restriction import *
-import matplotlib.pyplot as plt
-import os,psutil
-from Bio import  SeqIO
-import  numpy as np
+from Bio.Restriction import AllEnzymes
+from Bio import SeqIO
 import pandas as pd
 import openpyxl
-
-# create a new workbook and select the Sheet1 worksheet
-wb = openpyxl.Workbook()
-ws = wb.active
-ws.title = "Sheet1"
-
-Result = []
-# read by default 1st sheet of an excel file
-
-# Define a list of colors to use for each point
-import numpy as np
-Enzyme_list=[]
-max_score=[]
-total_cutting_list=[]
 
 def subtract_lists(list1, list2):
     return [abs(list1[i] - list2[i]) for i in range(len(list1))]
 
 def check_greater_than_50(lst):
-    for num in lst:
-        if num >=50:
-            return True
-    return False
-names_species=[]
-max_score_for_each_enzyme=[]
-# read by default 1st sheet of an excel file
-dataframe1 = pd.read_excel('CONSERVE_REGION_75.xlsx')
-primers=dataframe1["PN"].tolist()
+    return any(num >= 50 for num in lst)
 
+def find_nearest_numbers(query_numbers, numbers):
+    nearest_numbers = []
+    for query_number in query_numbers:
+        nearest_number = min(numbers, key=lambda x: abs(x - query_number))
+        nearest_numbers.append(nearest_number)
+    return nearest_numbers
 
-for forward_primer in primers :
+def analyze_sequence(sequence, forward_primer, reversed_primer, restriction_enzyme):
+    NAME, SEQUENCE = str(sequence.name), str(sequence.seq)
+    subsequence = SEQUENCE[SEQUENCE.index(str(forward_primer)):SEQUENCE.index(str(reversed_primer)) + len(str(reversed_primer))]
+    final_sequence = Seq(subsequence)
 
-    for reversed_primer in primers:
-        if forward_primer==reversed_primer:
-            continue
+    try:
+        cutting_Pattern = restriction_enzyme.catalyze(final_sequence)
+        if len(cutting_Pattern) < 2:
+            return None
 
-        for restrication_enzyme in AllEnzymes:
-              tb = 0
-              sequences = SeqIO.parse("75rRNAsequence.fasta", 'fasta')
-              namespecies_theircuttinglist = {}
-              all_cutting_list_pattern = []
-              for sequence in sequences:
+        sort_cutting_pattern = sorted(set(len(pattern) for pattern in cutting_Pattern if len(pattern) >= 50))
+        return NAME, sort_cutting_pattern
+    except:
+        return None
 
-                   NAME, SEQUENCE = str(sequence.name), str(sequence.seq)
+def calculate_total_difference(all_cutting_list_pattern):
+    total = 0
+    for i, query_numbers in enumerate(all_cutting_list_pattern):
+        for j, numbers in enumerate(all_cutting_list_pattern):
+            if i == j:
+                continue
+            nearest_numbers = find_nearest_numbers(query_numbers, numbers)
+            sub = subtract_lists(query_numbers, nearest_numbers)
+            if check_greater_than_50(sub):
+                total += 1
+    return total
 
-                   subsequence = SEQUENCE[SEQUENCE.index(str(forward_primer)):SEQUENCE.index(str(reversed_primer)) + len(str(reversed_primer))]
-                   final_sequence=Seq(subsequence)
+def analyze_primers_and_enzymes(primers, sequences_file, output_file):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    
+    data = []
+    max_score = []
+    
+    start_time = time.time()
+    
+    for forward_primer in primers:
+        for reversed_primer in primers:
+            if forward_primer == reversed_primer:
+                continue
 
-                   try:
-                     cutting_Pattern = restrication_enzyme.catalyze(final_sequence)
-                     print(cutting_Pattern)
-                     if len(cutting_Pattern)<2:
-                         break
-                     sort_cutting_pattern = []
-                     for pattern in cutting_Pattern:
-                         if len(pattern) in sort_cutting_pattern :
-                             continue
-                         if len(pattern)>=50:
-                            sort_cutting_pattern.append(len(pattern))
-                     sort_cutting_pattern.sort()
-                     namespecies_theircuttinglist[NAME]=sort_cutting_pattern
-                     if sort_cutting_pattern !=[]:
-                       all_cutting_list_pattern.append(sort_cutting_pattern)
-                       names_species.append(NAME)
-                   except:
-                     pass
-              if len(all_cutting_list_pattern)==75:
-                  Enzyme_list.append(restrication_enzyme)
-                  totla_number_of_pattern_for_all_sequnce=0
-                  total = 0
-                  index=0
-                  for i in all_cutting_list_pattern:
-                      nameofrrna=str(names_species[index])
-                      #print(nameofrrna)
-                      index = index + 1
-                      for j in all_cutting_list_pattern:
-                          if i == j:
+            for restriction_enzyme in AllEnzymes:
+                sequences = SeqIO.parse(sequences_file, 'fasta')
+                all_cutting_list_pattern = []
+                names_species = []
 
-                              continue
-                          query_numbers = i
-                          numbers = j
-                          nearest_numbers = []
-                          for query_number in query_numbers:
-                              nearest_number = None
-                              nearest_distance = float('inf')
-                              for number in numbers:
-                                  distance = abs(number - query_number)
-                                  if distance < nearest_distance:
-                                      nearest_number = number
-                                      nearest_distance = distance
-                              nearest_numbers.append(nearest_number)
-                          sub = subtract_lists(query_numbers, nearest_numbers)
+                for sequence in sequences:
+                    result = analyze_sequence(sequence, forward_primer, reversed_primer, restriction_enzyme)
+                    if result:
+                        name, sort_cutting_pattern = result
+                        if sort_cutting_pattern:
+                            all_cutting_list_pattern.append(sort_cutting_pattern)
+                            names_species.append(name)
 
-                          if check_greater_than_50(sub) == True:
+                if len(all_cutting_list_pattern) == 66:
+                    total_difference = calculate_total_difference(all_cutting_list_pattern)
+                    
+                    if total_difference >= 4200:
+                        length_between_primer = len(Seq(sequence.seq[sequence.seq.index(str(forward_primer)):sequence.seq.index(str(reversed_primer)) + len(str(reversed_primer))]))
+                        differentiation = float(total_difference) / 4290
+                        
+                        filter_primer = [
+                            forward_primer,
+                            reversed_primer,
+                            length_between_primer,
+                            total_difference,
+                            differentiation,
+                            str(restriction_enzyme)
+                        ]
+                        data.append(filter_primer)
+                    
+                    max_score.append(total_difference)
 
-                              total = total + 1
+    for row in data:
+        ws.append(row)
+    
+    wb.save(output_file)
+    
+    end_time = time.time()
+    print(f"Time taken to complete: {end_time - start_time:.6f} seconds")
 
-
-
-
-                      totla_number_of_pattern_for_all_sequnce = totla_number_of_pattern_for_all_sequnce + total
-                      total = 0
-                  if totla_number_of_pattern_for_all_sequnce>4200:
-                     print(totla_number_of_pattern_for_all_sequnce)
-                  if totla_number_of_pattern_for_all_sequnce>=4200:
-                      length_btween_primer=len(final_sequence)
-                      FILTER_PRIMER=[]
-                      FILTER_PRIMER.append(forward_primer)
-                      FILTER_PRIMER.append(reversed_primer)
-                      FILTER_PRIMER.append(length_btween_primer)
-                      FILTER_PRIMER.append(totla_number_of_pattern_for_all_sequnce)
-                      differnation=float(float(totla_number_of_pattern_for_all_sequnce) / float(4290))
-                      FILTER_PRIMER.append(differnation)
-                      FILTER_PRIMER.append(str(restrication_enzyme))
-                      Result.append(FILTER_PRIMER)
-                  max_score_for_each_enzyme.append(totla_number_of_pattern_for_all_sequnce)
-                  sorted_dict = dict(sorted(namespecies_theircuttinglist.items(), key=lambda x: len(x[1])))
-                  all_cutting_list_pattern.sort()
-                  x = list(sorted_dict.keys())
-
-        if max_score_for_each_enzyme !=[]:
-           c=max(max_score_for_each_enzyme)
-           max_score.append(c)
-# Save the workbook
-for row in Result:
-    ws.append(row)
-
-# save the workbook to a file
-wb.save("Primers_enzyme.xlsx")
+# Main execution
+if __name__ == "__main__":
+    dataframe1 = pd.read_excel('CONSERVE_REGION.xlsx')
+    primers = dataframe1["PN"].tolist()
+    analyze_primers_and_enzymes(primers, "rRNAsequence.fasta", "Primers_enzyme.xlsx")
