@@ -57,7 +57,7 @@ def process_sequences(annotation_info, path):
 
 # Main execution
 path = "F:/Data set of Mycobacterial"
-annotation_file = '70_annotation_sequence.xlsx'
+annotation_file = 'annotation_sequence.xlsx'
 
 annotation_info = read_annotation_file(annotation_file)
 all_rRNA_records = process_sequences(annotation_info, path)
