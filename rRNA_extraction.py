@@ -62,5 +62,5 @@ annotation_file = 'annotation_sequence.xlsx'
 annotation_info = read_annotation_file(annotation_file)
 all_rRNA_records = process_sequences(annotation_info, path)
 
-SeqIO.write(all_rRNA_records, "73rRNA.fasta", 'fasta')
+SeqIO.write(all_rRNA_records, "rRNAsequence.fasta", 'fasta')
 print(f"Total rRNA records extracted: {len(all_rRNA_records)}")
