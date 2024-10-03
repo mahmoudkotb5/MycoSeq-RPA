@@ -1,109 +1,66 @@
-
 from Bio.Seq import Seq
-import os,psutil
-from Bio import  SeqIO
-from Bio.Restriction import *
-r=RestrictionBatch()
-path = "F:/Data set of Mycobacterial"
-path2 = "F:/Data set of Mycobacterial/"
-dir_list = os.listdir(path)
-# import pandas lib as pd
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+import os
 import pandas as pd
 
-# read by default 1st sheet of an excel file
-annoation_information = pd.read_excel('75_annotation_sequence.xlsx')
-PN=annoation_information["PN"].tolist()
-SPEC=annoation_information["SPEC"].tolist()
-S51FROM=annoation_information["5S1FROM"].tolist()
-S5TO=annoation_information["5STO"].tolist()
-S23SFROM=annoation_information["23SFROM"].tolist()
-S23STO=annoation_information["23STO"].tolist()
-S16SFROM=annoation_information["16SFROM"].tolist()
-S16STO=annoation_information["16STO"].tolist()
-ALL_rRNA=[]
-count=0
-for i in  range(0,len(SPEC)):
-      if count==3:
-          break
-      else:
-          count=count+1
 
-      path_ofsequence = path2 + str(SPEC[i]) + ".fasta"
-      print(SPEC[i])
-      sequeces = SeqIO.parse(path_ofsequence, 'fasta')
-      for sequence in sequeces:
-
-         NAME, SEQUENCE = str(sequence.name), str(sequence.seq)
-
-         if PN[i]=="POSTIVE":
-            if S51FROM[i]!=0 and S5TO[i]!= 0 :
-                S5_region = SEQUENCE[S51FROM[i]:S5TO[i]]
-                print(len(S5_region))
-            if S23SFROM[i]!=0 and S23STO[i]!= 0 :
-               S23_region = SEQUENCE[S23SFROM[i]:S23STO[i]]
-
-            if S16SFROM[i]!=0 and S16STO[i]!= 0 :
-               S16_region = SEQUENCE[S16SFROM[i]:S16STO[i]]
-               print("16s"+S16_region)
-
-               print(len(S16_region))
-               is1=SEQUENCE[S16STO[i]:S23SFROM[i]]
-               print("is1" + is1)
-               is2=SEQUENCE[ S23STO[i]:S51FROM[i]]
-               print("is2"+is2)
-
-            rRNA_REGION= S16_region + is1 + S23_region + is2 + S5_region
-            from Bio.SeqRecord import SeqRecord
-            rRNA=Seq(rRNA_REGION)
-            id=NAME
-            s=NAME+".fasta"
-            print(rRNA.index(S5_region))
-
-            Sequence_record_rRNA = SeqRecord(seq=rRNA, id=id)
-            ALL_rRNA.append(Sequence_record_rRNA)
+def read_annotation_file(file_path):
+    """Read the annotation Excel file and return lists of annotations."""
+    annotations = pd.read_excel(file_path)
+    return (
+        annotations["PN"].tolist(),
+        annotations["SPEC"].tolist(),
+        annotations["5S1FROM"].tolist(),
+        annotations["5STO"].tolist(),
+        annotations["23SFROM"].tolist(),
+        annotations["23STO"].tolist(),
+        annotations["16SFROM"].tolist(),
+        annotations["16STO"].tolist()
+    )
 
 
+def extract_rRNA_region(sequence, indices):
+    """Extract rRNA regions based on provided indices."""
+    S51FROM, S5TO, S23SFROM, S23STO, S16SFROM, S16STO = indices
+    rRNA_regions = []
 
-         elif PN[i]=="NEGATIVE":
+    if S51FROM != 0 and S5TO != 0:
+        rRNA_regions.append(sequence[S51FROM:S5TO])
+    if S23SFROM != 0 and S23STO != 0:
+        rRNA_regions.append(sequence[S23SFROM:S23STO])
+    if S16SFROM != 0 and S16STO != 0:
+        rRNA_regions.append(sequence[S16SFROM:S16STO])
 
-             SEQUENCE2= str(Seq(SEQUENCE).complement())
-             if S51FROM[i] != 0 and S5TO[i] != 0:
-                 S5_region = SEQUENCE2[S51FROM[i]:S5TO[i]]
-                 S5_region= S5_region[::-1]
-                 print(len(S5_region))
-                 new_sequence = SEQUENCE
-             if S23SFROM[i] != 0 and S23STO[i] != 0:
-                 S23_region = SEQUENCE2[S23SFROM[i]:S23STO[i]]
-                 S23_region = S23_region[::-1]
-
-             if S16SFROM[i] != 0 and S16STO[i] != 0:
-                 S16_region = SEQUENCE2[S16SFROM[i]:S16STO[i]]
-                 S16_region = S16_region[::-1]
-                 print(len(S16_region))
+    return ''.join(rRNA_regions)
 
 
+def process_sequences(annotation_info, path):
+    """Process sequences from files and extract rRNA regions."""
+    ALL_rRNA = []
+    for i in range(len(annotation_info[0])):
+        spec = annotation_info[1][i]
+        path_ofsequence = os.path.join(path, f"{spec}.fasta")
+
+        try:
+            sequences = SeqIO.parse(path_ofsequence, 'fasta')
+            for sequence in sequences:
+                rRNA_region = extract_rRNA_region(str(sequence.seq), (annotation_info[2][i], annotation_info[3][i],
+                                                                      annotation_info[4][i], annotation_info[5][i],
+                                                                      annotation_info[6][i], annotation_info[7][i]))
+                rRNA = Seq(rRNA_region)
+                ALL_rRNA.append(SeqRecord(seq=rRNA, id=sequence.name))
+        except FileNotFoundError:
+            print(f"File not found: {path_ofsequence}")
+    return ALL_rRNA
 
 
-             is1 = SEQUENCE2[S23STO[i]:S16SFROM[i]]
-             is1=is1[::-1]
-             is2 = SEQUENCE2[S5TO[i]:S23SFROM[i]]
-             is2 = is2[::-1]
+# Main execution
+path = "F:/Data set of Mycobacterial"
+annotation_file = '70_annotation_sequence.xlsx'
 
+annotation_info = read_annotation_file(annotation_file)
+all_rRNA_records = process_sequences(annotation_info, path)
 
-
-             rRNA_REGION = S16_region + is1 + S23_region + is2 + S5_region
-             com=rRNA_REGION
-             from Bio.SeqRecord import SeqRecord
-
-             rRNA = Seq(com)
-             id = NAME
-             s = NAME + ".fasta"
-             print(rRNA.index(S5_region))
-             Sequence_record_rRNA = SeqRecord(seq=rRNA, id=id)
-             ALL_rRNA.append(Sequence_record_rRNA)
-
-
-SeqIO.write(ALL_rRNA, "75rRNAsequence.fasta", 'fasta')
-print(len(ALL_rRNA))
-
-
+SeqIO.write(all_rRNA_records, "73rRNA.fasta", 'fasta')
+print(f"Total rRNA records extracted: {len(all_rRNA_records)}")
