@@ -12,10 +12,9 @@ wb = openpyxl.Workbook()
 ws = wb.active
 ws.title = "Sheet1"
 
-dataa = []
-strrrr=""
+Result = []
 # read by default 1st sheet of an excel file
-x = []
+
 # Define a list of colors to use for each point
 import numpy as np
 Enzyme_list=[]
@@ -33,10 +32,10 @@ def check_greater_than_50(lst):
 names_species=[]
 max_score_for_each_enzyme=[]
 # read by default 1st sheet of an excel file
-dataframe1 = pd.read_excel('CONSERVE_REGION_66.xlsx')
+dataframe1 = pd.read_excel('CONSERVE_REGION_75.xlsx')
 primers=dataframe1["PN"].tolist()
 
-numberr=1
+
 for forward_primer in primers :
 
     for reversed_primer in primers:
@@ -45,7 +44,7 @@ for forward_primer in primers :
 
         for restrication_enzyme in AllEnzymes:
               tb = 0
-              sequences = SeqIO.parse("allMYCOBACTERIUM70.fasta", 'fasta')
+              sequences = SeqIO.parse("75rRNAsequence.fasta", 'fasta')
               namespecies_theircuttinglist = {}
               all_cutting_list_pattern = []
               for sequence in sequences:
@@ -73,7 +72,7 @@ for forward_primer in primers :
                        names_species.append(NAME)
                    except:
                      pass
-              if len(all_cutting_list_pattern)==66:
+              if len(all_cutting_list_pattern)==75:
                   Enzyme_list.append(restrication_enzyme)
                   totla_number_of_pattern_for_all_sequnce=0
                   total = 0
@@ -121,7 +120,7 @@ for forward_primer in primers :
                       differnation=float(float(totla_number_of_pattern_for_all_sequnce) / float(4290))
                       FILTER_PRIMER.append(differnation)
                       FILTER_PRIMER.append(str(restrication_enzyme))
-                      dataa.append(FILTER_PRIMER)
+                      Result.append(FILTER_PRIMER)
                   max_score_for_each_enzyme.append(totla_number_of_pattern_for_all_sequnce)
                   sorted_dict = dict(sorted(namespecies_theircuttinglist.items(), key=lambda x: len(x[1])))
                   all_cutting_list_pattern.sort()
@@ -131,7 +130,7 @@ for forward_primer in primers :
            c=max(max_score_for_each_enzyme)
            max_score.append(c)
 # Save the workbook
-for row in dataa:
+for row in Result:
     ws.append(row)
 
 # save the workbook to a file
