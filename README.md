@@ -13,12 +13,12 @@ This script extracts rRNA regions from genomic sequences based on annotation dat
 
 1. Clone this repository:
    
-   git clone https://github.com/your-username/your-repo-name.git
+   git clone https://github.com/mahmoudkotb5/MycoSeq-RPA.git
 
 
 2. Navigate to the project directory:
 
-   cd your-repo-name
+   cd MycoSeq-RPA
  
 
 3. Install the required packages:
