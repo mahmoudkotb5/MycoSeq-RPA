@@ -11,7 +11,7 @@ dir_list = os.listdir(path)
 import pandas as pd
 
 # read by default 1st sheet of an excel file
-annoation_information = pd.read_excel('70_annotation_sequence.xlsx')
+annoation_information = pd.read_excel('75_annotation_sequence.xlsx')
 PN=annoation_information["PN"].tolist()
 SPEC=annoation_information["SPEC"].tolist()
 S51FROM=annoation_information["5S1FROM"].tolist()
