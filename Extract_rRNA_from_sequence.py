@@ -103,7 +103,7 @@ for i in  range(0,len(SPEC)):
              ALL_rRNA.append(Sequence_record_rRNA)
 
 
-SeqIO.write(ALL_rRNA, "3SEQUENCE.fasta", 'fasta')
+SeqIO.write(ALL_rRNA, "75rRNAsequence.fasta", 'fasta')
 print(len(ALL_rRNA))
 
 
