@@ -59,13 +59,13 @@ This tool performs DNA analysis using primers and restriction enzymes. It can be
 
 1. Clone the repository:
 
-   git clone https://github.com/your-username/dna-analysis-tool.git
+   git clone [https://github.com/your-username/dna-analysis-tool.git](https://github.com/mahmoudkotb5/MycoSeq-RPA.git)
 
 
 
 2. Install the required packages:
  
-   pip install -r requirements2.txt
+   pip install -r requirements.txt
 
 
 ## Usage
